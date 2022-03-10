@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIXED
-pragma solidity >=0.6.6 <0.9.0;
+pragma solidity >=0.8.4 <0.9.0;
 import "../interfaces/ISybil.sol";
 import "./Ownable.sol";
 
 
-contract ProxySybil is Ownable, ISybil {
+contract ProxySybil is Ownable {
 
     ISybil public sybilImplementation;
 
@@ -12,7 +12,7 @@ contract ProxySybil is Ownable, ISybil {
     constructor() Ownable() {
     }
 
-    function change(ISybil _newSybil) public onlyOwner {
+    function change(ISybil _newSybil) public ownerOnly {
         sybilImplementation = _newSybil;
     }
 

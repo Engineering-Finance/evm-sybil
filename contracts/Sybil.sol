@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIXED
-pragma solidity >=0.6.6 <0.9.0;
+pragma solidity >=0.8.4 <0.9.0;
 
 import "../interfaces/AggregatorV3Interface.sol";
 import "../interfaces/IUniswapV2Router01.sol";
@@ -14,7 +14,7 @@ import "./Ownable.sol";
 /**
  * @title Sybil - Oracle-like contract supporting ERC20, ERC4626 and LP tokens.
  */
-contract Sybil is Ownable, ISybil {
+contract Sybil is Ownable {
 
     event SetCurrency(string currency, address indexed old_feed, address indexed new_feed);
     event SetTokenRouter(address indexed token, address indexed old_router, address indexed new_router);
@@ -122,7 +122,7 @@ contract Sybil is Ownable, ISybil {
      * @param _token - the token address
      * @param _new_router - the router address
      */
-    function setTokenRouter (address _token, address _new_router) onlyOwner public {
+    function setTokenRouter (address _token, address _new_router) ownerOnly public {
         address _old_router = address(erc20toV2Router[_token]);
         require(_old_router != _new_router, "Sybil: new router is the same as the old router");
         erc20toV2Router[_token] = IUniswapV2Router01(_new_router);
@@ -133,7 +133,7 @@ contract Sybil is Ownable, ISybil {
      * @notice - marks _token as a supported ERC4626 token.
      * @param _token - the token address
      */
-    function setToken4626(address _token) onlyOwner public {
+    function setToken4626(address _token) ownerOnly public {
         bool _old_bool = is4626[_token];
         require(_old_bool != true, "Sybil: token is already set");
         require(isSupportedAsset(IERC4626(_token).asset()), "Sybil: underlying asset is not supported");
@@ -145,7 +145,7 @@ contract Sybil is Ownable, ISybil {
      * @notice - unmarks _token as a supported ERC4626 token.
      * @param _token - the token address
      */
-    function unsetToken4626(address _token) onlyOwner public {
+    function unsetToken4626(address _token) ownerOnly public {
         bool _old_bool = is4626[_token];
         require(_old_bool != false, "Sybil: token is already unset");
         is4626[_token] = false;
@@ -156,7 +156,7 @@ contract Sybil is Ownable, ISybil {
      * @notice - marks _token as a supported LP token.
      * @param _token - the token address
      */
-    function setLPToken(address _token) onlyOwner public {
+    function setLPToken(address _token) ownerOnly public {
         // make sure underlying tokens are supported
         require(isSupportedAsset(IUniswapV2Pair(_token).token0()));
         require(isSupportedAsset(IUniswapV2Pair(_token).token1()));
@@ -168,7 +168,7 @@ contract Sybil is Ownable, ISybil {
      * @notice - unmarks _token as a supported LP token.
      * @param _token - the token address
      */
-    function unsetLPToken(address _token) onlyOwner public {
+    function unsetLPToken(address _token) ownerOnly public {
         bool _old_bool = isLPToken[_token];
         require(_old_bool != false, "Sybil: token is already unset");
         isLPToken[_token] = false;
@@ -179,7 +179,7 @@ contract Sybil is Ownable, ISybil {
      * @notice - marks _token as a supported unit token.
      * @param _token - the token address
      */
-    function setUnitToken(address _token) onlyOwner public {
+    function setUnitToken(address _token) ownerOnly public {
         bool _old_bool = isUnitToken[_token];
         require(_old_bool != true, "Sybil: unit token is already set");
         isUnitToken[_token] = true;
@@ -190,7 +190,7 @@ contract Sybil is Ownable, ISybil {
      * @notice - unmarks _token as a supported unit token.
      * @param _token - the token address
      */
-    function unsetUnitToken(address _token) onlyOwner public {
+    function unsetUnitToken(address _token) ownerOnly public {
         bool _old_bool = isUnitToken[_token];
         require(_old_bool != false, "Sybil: unit token is already unset");
         isUnitToken[_token] = false;

@@ -1,0 +1,40 @@
+name: Main workflow
+
+on:
+  push:
+    branches:
+      - main
+      - ci
+  pull_request:
+    branches:
+      - main
+      - ci
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
+          architecture: "x64"
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "14.x"
+      - run: pip3 install eth-brownie
+      - run: npm install -g ganache-cli
+      - run: brownie compile
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "14.x"
+      - run: pip3 install -I eth-brownie===1.16.4
+      - run: npm install -g ganache-cli@6.12.2
+      - run: brownie compile
+      - run: brownie test tests/sybil.py -s --network bsc-main-fork
