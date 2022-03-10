@@ -33,7 +33,7 @@ contract Sybil is Ownable, ISybil {
     /// @dev mapping of ERC-20 tokens to their uniswap routers
     mapping (address => IUniswapV2Router01) public erc20toV2Router;
     uint256 constant UNIT_TOKEN = 1;
-    uint256 constant SWAPABLE_TOKEN = 2;
+    uint256 constant SWAPPABLE_TOKEN = 2;
     uint256 constant LP_TOKEN = 3;
     uint256 constant ERC4626_TOKEN = 4;
 
@@ -86,8 +86,8 @@ contract Sybil is Ownable, ISybil {
      * @param _token - the token address
      * @return is_supported_ - true if the token is supported, false otherwise
      */
-    function isERC20Asset(address _token) public view returns (bool is_supported_) {
-        is_supported_ = (supportedTokens[_token] == SWAPABLE_TOKEN);
+    function isERC20Asset(address _token) public view returns (bool) {
+        return supportedTokens[_token] == SWAPPABLE_TOKEN;
     }
 
     /**
@@ -95,8 +95,8 @@ contract Sybil is Ownable, ISybil {
      * @param _token - the token address
      * @return is_supported_ - true if the token is supported, false otherwise
      */
-    function is4626Asset(address _token) public view returns (bool is_supported_) {
-        is_supported_ = (supportedTokens[_token] == ERC4626_TOKEN);
+    function is4626Asset(address _token) public view returns (bool) {
+        return supportedTokens[_token] == ERC4626_TOKEN;
     }
 
     /**
@@ -104,8 +104,8 @@ contract Sybil is Ownable, ISybil {
      * @param _token - the token address
      * @return is_supported_ - true if the token is supported, false otherwise
      */
-    function isLPAsset(address _token) public view returns (bool is_supported_) {
-        is_supported_ = (supportedTokens[_token] == LP_TOKEN);
+    function isLPAsset(address _token) public view returns (bool) {
+        return supportedTokens[_token] == LP_TOKEN;
     }
 
     /**
@@ -123,7 +123,7 @@ contract Sybil is Ownable, ISybil {
      * @return is_supported_ - true if the token is supported, false otherwise
      */
     function isSupportedAsset(address _token) public view returns (bool) {
-        return (supportedTokens[_token] !=0);
+        return supportedTokens[_token] !=0;
     }
 
     /**
@@ -133,9 +133,9 @@ contract Sybil is Ownable, ISybil {
      */
     function setTokenRouter (address _token, address _new_router) ownerOnly public {
         uint256 supportedToken_ = supportedTokens[_token];
-        require ((supportedToken_ ==0) || (supportedToken_ == SWAPABLE_TOKEN), "Sybil: not swappable");
+        require ((supportedToken_ ==0) || (supportedToken_ == SWAPPABLE_TOKEN), "Sybil: not swappable");
         if (supportedToken_ == 0) {
-            supportedTokens[_token] = SWAPABLE_TOKEN;
+            supportedTokens[_token] = SWAPPABLE_TOKEN;
         }
         address _old_router = address(erc20toV2Router[_token]);
         require(_old_router != _new_router, "Sybil: new router is the same as the old router");
@@ -293,19 +293,19 @@ contract Sybil is Ownable, ISybil {
      * @param _amount - the amount of tokens to buy
      * @return price_ - price in UNIT to buy `_amount` of `_token`
      */
-    function getBuyPrice(address _token, uint256 _amount) public view returns (uint256 price_) {
+    function getBuyPrice(address _token, uint256 _amount) public view returns (uint256) {
         require(isSupportedAsset(_token));
         if (isERC20Asset(_token)) {
-            price_ = _getBuyPriceERC20(_token, _amount);
+            return _getBuyPriceERC20(_token, _amount);
         }
         else if (isLPAsset(_token)) {
-            price_ = _getBuyPriceLP(_token, _amount);
+            return _getBuyPriceLP(_token, _amount);
         }
         else if (is4626Asset(_token)) {
-            price_ = _getBuyPriceERC4626(_token, _amount);
+            return _getBuyPriceERC4626(_token, _amount);
         }
         else if (isUnitAsset(_token)) {
-            price_ = _amount;
+            return _amount;
         }
         else {
             require(false, 'Sybil: unknown token type');
@@ -318,33 +318,32 @@ contract Sybil is Ownable, ISybil {
      * @param _amount - the amount of tokens to buy
      * @return price_ - the price we get for selling.
      */
-    function getSellPrice(address _token, uint256 _amount) public view returns (uint256 price_) {
+    function getSellPrice(address _token, uint256 _amount) public view returns (uint256) {
         uint256 supportedToken_ = supportedTokens[_token]; 
         require(supportedToken_ !=0, "Token not supported");
-        if (supportedToken_ ==  SWAPABLE_TOKEN){
-            price_ = _getSellPriceERC20(_token, _amount);
+        if (supportedToken_ ==  SWAPPABLE_TOKEN){
+            return _getSellPriceERC20(_token, _amount);
         }
         else if (supportedToken_ == LP_TOKEN) {
-            price_ = _getSellPriceLP(_token, _amount);
+            return _getSellPriceLP(_token, _amount);
         }
         else if (supportedToken_ == ERC4626_TOKEN) {
-            price_ = _getSellPriceERC4626(_token, _amount);
+            return _getSellPriceERC4626(_token, _amount);
         }
         else if (supportedToken_ == UNIT_TOKEN) {
-            price_ = _amount;
+            return _amount;
         }
         else {
             revert('Sybil: unknown token type');
         }
     }
 
-    function _getPerUnit(string memory _currency) private view returns (uint256 price_, uint256 decimals_) {
+    function _getPerUnit(string memory _currency) private view returns (uint256, uint256) {
         // make sure symbolToPriceFeed[_currency] isn't null
         require(symbolToPriceFeed[_currency] != address(0), 'Sybil: price feed not found');
         AggregatorV3Interface _pricefeed = AggregatorV3Interface(symbolToPriceFeed[_currency]);
         (,int price,,,) = _pricefeed.latestRoundData();
-        price_ = uint256(price);
-        decimals_ = _pricefeed.decimals();
+        return (uint256(price), _pricefeed.decimals());
     }
 
     /**
@@ -354,9 +353,9 @@ contract Sybil is Ownable, ISybil {
      * @param _amount - the amount of tokens to buy
      * @return price_ - price in _currency to buy `_amount` of `_token`
      */
-    function getBuyPriceAs(string memory _currency, address _token, uint256 _amount) public view returns (uint256 price_) {
+    function getBuyPriceAs(string memory _currency, address _token, uint256 _amount) public view returns (uint256) {
         (uint256 _currencyPerUnit, uint256 _currencyPerUnitDecimals) = _getPerUnit(_currency);
-        price_ = getBuyPrice(_token, _amount) * _currencyPerUnit / 10**_currencyPerUnitDecimals;
+        return getBuyPrice(_token, _amount) * _currencyPerUnit / 10**_currencyPerUnitDecimals;
     }
 
     /**
@@ -366,9 +365,8 @@ contract Sybil is Ownable, ISybil {
      * @param _amount - the amount of tokens to sell
      * @return price_ - price in _currency we got for selling `_amount` of `_token`
      */
-    function getSellPriceAs(string memory _currency, address _token, uint256 _amount) public view returns (uint256 price_) {
+    function getSellPriceAs(string memory _currency, address _token, uint256 _amount) public view returns (uint256) {
         (uint256 _currencyPerUnit, uint256 _currencyPerUnitDecimals) = _getPerUnit(_currency);
-        uint256 unitPrice = getSellPrice(_token, _amount);
-        return unitPrice * _currencyPerUnit / 10**_currencyPerUnitDecimals;
+        return getSellPrice(_token, _amount) * _currencyPerUnit / 10**_currencyPerUnitDecimals;
     }
 }
