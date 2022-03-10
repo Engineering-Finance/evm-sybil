@@ -231,11 +231,8 @@ contract Sybil is Ownable, ISybil {
         address _asset = _tokenContract.asset();
         require(isSupportedAsset(_asset), 'Sybil: EIP-4626 underlying token not supported');
 
-        // compute amount of underlying asset
-        _amount = _amount * _tokenContract.assetsPerShare() / 10**_tokenContract.decimals();
-
         // return rate of underlying token
-        return getBuyPrice(_asset, _amount);
+        return getBuyPrice(_asset, _tokenContract.previewRedeem(_amount));
     }
 
     /// @dev Get the the amount of underlying token to spend to get _amount of LP _tokens
@@ -280,11 +277,8 @@ contract Sybil is Ownable, ISybil {
         address _asset = _tokenContract.asset();
         require(isSupportedAsset(_asset), 'Sybil: EIP-4626 underlying token not supported');
 
-        // compute amount of underlying asset
-        _amount = _amount * _tokenContract.assetsPerShare() / 10**_tokenContract.decimals();
-
         // return rate of underlying token
-        return getSellPrice(_asset, _amount);
+        return getSellPrice(_asset, _tokenContract.previewRedeem(_amount));
     }
 
     /**
