@@ -64,7 +64,7 @@ contract Sybil is Ownable, ISybil {
      * @param _currency - the currency symbol
      * @param _new_feed - the address of the price feed contract
      */
-    function setCurrency(string memory _currency, address _new_feed) public ownerOnly {
+    function setCurrency(string memory _currency, address _new_feed) public onlyOwner {
         address _old_feed = symbolToPriceFeed[_currency];
         symbolToPriceFeed[_currency] = _new_feed;
         emit SetCurrency(_currency, _old_feed, _new_feed);
@@ -131,7 +131,7 @@ contract Sybil is Ownable, ISybil {
      * @param _token - the token address
      * @param _new_router - the router address
      */
-    function setTokenRouter (address _token, address _new_router) ownerOnly public {
+    function setTokenRouter (address _token, address _new_router) onlyOwner public {
         uint256 supportedToken_ = supportedTokens[_token];
         require ((supportedToken_ ==0) || (supportedToken_ == SWAPPABLE_TOKEN), "Sybil: not swappable");
         if (supportedToken_ == 0) {
@@ -147,7 +147,7 @@ contract Sybil is Ownable, ISybil {
      * @notice - marks _token as a supported ERC4626 token.
      * @param _token - the token address
      */
-    function setToken4626(address _token) ownerOnly public {
+    function setToken4626(address _token) onlyOwner public {
         require(supportedTokens[_token] == 0, "Sybil: token is already set");
         require(isSupportedAsset(IERC4626(_token).asset()), "Sybil: underlying asset is not supported");
         supportedTokens[_token] = ERC4626_TOKEN;
@@ -158,7 +158,7 @@ contract Sybil is Ownable, ISybil {
      * @notice - unmarks _token as a supported ERC4626 token.
      * @param _token - the token address
      */
-    function unsetToken4626(address _token) ownerOnly public {
+    function unsetToken4626(address _token) onlyOwner public {
         require(supportedTokens[_token] == ERC4626_TOKEN, "Sybil: token is already unset or not set as ERC4626");
         delete supportedTokens[_token];
         emit SetToken4626(_token, false);
@@ -168,7 +168,7 @@ contract Sybil is Ownable, ISybil {
      * @notice - marks _token as a supported LP token.
      * @param _token - the token address
      */
-    function setLPToken(address _token) ownerOnly public {
+    function setLPToken(address _token) onlyOwner public {
         // make sure underlying tokens are supported
         require(supportedTokens[_token] == 0, "Sybil: token is already set");
         require(isSupportedAsset(IUniswapV2Pair(_token).token0()));
@@ -181,7 +181,7 @@ contract Sybil is Ownable, ISybil {
      * @notice - unmarks _token as a supported LP token.
      * @param _token - the token address
      */
-    function unsetLPToken(address _token) ownerOnly public {
+    function unsetLPToken(address _token) onlyOwner public {
         require(supportedTokens[_token] == LP_TOKEN, "Sybil: token is already unset or not set as LP Token");
         delete supportedTokens[_token];
         emit SetLPToken(_token, false);
@@ -191,7 +191,7 @@ contract Sybil is Ownable, ISybil {
      * @notice - marks _token as a supported unit token.
      * @param _token - the token address
      */
-    function setUnitToken(address _token) ownerOnly public {
+    function setUnitToken(address _token) onlyOwner public {
         require(supportedTokens[_token] == 0, "Sybil: token is already set");
         supportedTokens[_token] = UNIT_TOKEN;
         emit SetUnitToken(_token, true);
@@ -201,7 +201,7 @@ contract Sybil is Ownable, ISybil {
      * @notice - unmarks _token as a supported unit token.
      * @param _token - the token address
      */
-    function unsetUnitToken(address _token) ownerOnly public {
+    function unsetUnitToken(address _token) onlyOwner public {
         require(supportedTokens[_token] == UNIT_TOKEN, "Sybil: unit token is already unset or not set as UNIT TOKEN");
         delete supportedTokens[_token];
         emit SetUnitToken(_token, false);

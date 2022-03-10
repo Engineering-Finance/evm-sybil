@@ -12,7 +12,7 @@ contract ProxySybil is Ownable, ISybil {
     constructor() Ownable() {
     }
 
-    function change(ISybil _newSybil) public ownerOnly {
+    function change(ISybil _newSybil) public onlyOwner {
         sybilImplementation = _newSybil;
     }
 

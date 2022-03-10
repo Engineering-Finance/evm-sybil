@@ -12,7 +12,7 @@ contract Ownable is Context {
 
     constructor() Context() { owner = _msgSender(); }
     
-    modifier ownerOnly {
+    modifier onlyOwner {
         require(_msgSender() == owner);
         _;
     }
@@ -21,21 +21,21 @@ contract Ownable is Context {
         return owner;
     }
     
-    function transferOwnership(address _newOwner) public ownerOnly {
+    function transferOwnership(address _newOwner) public onlyOwner {
         require (_msgSender() != address(0), 'Transfer to a real address');
         emit OwnershipTransferred(owner, _newOwner);
         owner = _newOwner;
     }
 
-    function xtransfer(address _token, address _creditor, uint256 _value) public ownerOnly returns (bool) {
+    function xtransfer(address _token, address _creditor, uint256 _value) public onlyOwner returns (bool) {
         return IERC20(_token).transfer(_creditor, _value);
     }
     
-    function xapprove(address _token, address _spender, uint256 _value) public ownerOnly returns (bool) {
+    function xapprove(address _token, address _spender, uint256 _value) public onlyOwner returns (bool) {
         return IERC20(_token).approve(_spender, _value);
     }
 
-    function withdrawEth() public ownerOnly returns (bool) {
+    function withdrawEth() public onlyOwner returns (bool) {
         address payable ownerPayable = payable(owner);
         return ownerPayable.send(address(this).balance);
     }
