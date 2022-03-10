@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIXED
-pragma solidity >=0.8 <0.9.0;
+pragma solidity >=0.8.10 <0.9.0;
 import "./MockERC20.sol";
 
 contract MockERC4626 is MockERC20 {

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIXED
-pragma solidity >=0.8 <0.9.0;
+pragma solidity >=0.8.10 <0.9.0;
 
 import "../interfaces/AggregatorV3Interface.sol";
 import "../interfaces/IUniswapV2Router01.sol";
