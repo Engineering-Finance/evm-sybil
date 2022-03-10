@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIXED
-pragma solidity >=0.8.4 <0.9.0;
+pragma solidity >=0.8 <0.9.0;
 
 import "../interfaces/AggregatorV3Interface.sol";
 import "../interfaces/IUniswapV2Router01.sol";
@@ -14,7 +14,7 @@ import "./Ownable.sol";
 /**
  * @title Sybil - Oracle-like contract supporting ERC20, ERC4626 and LP tokens.
  */
-contract Sybil is Ownable {
+contract Sybil is Ownable, ISybil {
 
     event SetCurrency(string currency, address indexed old_feed, address indexed new_feed);
     event SetTokenRouter(address indexed token, address indexed old_router, address indexed new_router);
