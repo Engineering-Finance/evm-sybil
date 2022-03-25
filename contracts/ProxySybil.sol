@@ -16,11 +16,11 @@ contract ProxySybil is Ownable, ISybil {
         sybilImplementation = _newSybil;
     }
 
-    function getBuyPrice(address _token, uint256 _amount) external view returns (uint256 price_) {
+    function getBuyPrice(address _token, uint256 _amount) public view returns (uint256 price_) {
         return sybilImplementation.getBuyPrice(_token, _amount);
     }
 
-    function getSellPrice(address _token, uint256 _amount) external view returns (uint256 price_) {
+    function getSellPrice(address _token, uint256 _amount) public view returns (uint256 price_) {
         return sybilImplementation.getSellPrice(_token, _amount);
     }
 
