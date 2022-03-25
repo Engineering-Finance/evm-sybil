@@ -33,7 +33,13 @@ def erc4626():
     return accounts[0].deploy(MockERC4626, "MockERC4626", "MRD4626", 100*10**18, BETH_ADDRESS, 2*10**18)
 
 
-def test_oracle(sybil, erc4626):
+@pytest.fixture
+def erc20():
+    print("deploy mock ERC20 pegged to USD")
+    return accounts[0].deploy(MockERC20, "Fake USD", "FU", 18, 100*10**18)
+
+
+def test_oracle(sybil, erc4626, erc20):
 
     # set usd price feed
     sybil.setCurrency("USD", usd_price_feed_address)
@@ -143,5 +149,27 @@ def test_oracle(sybil, erc4626):
     print("find out ERC4626 sell rate")
     price = sybil.getSellPrice(ERC4626_ADDRESS, 10**18)
     print("ERC4626 sell price is", price, price / 10**18)
+
+    FU_ADDRESS = erc20.address
+    print("FakeUSD Address", FU_ADDRESS)
+
+    tx = sybil.setPeggedToken(FU_ADDRESS, "USD")
+    print("Set FakeUSD as pegged USD token in Sybil")
+
+    print("find out FakeUSD buy rate")
+    price = sybil.getBuyPrice(FU_ADDRESS, 10**18)
+    print("FakeUSD buy price is", price, price / 10**18)
+
+    print("find out FakeUSD sell rate")
+    price = sybil.getSellPrice(FU_ADDRESS, 10**18)
+    print("FakeUSD sell price is", price, price / 10**18)
+
+    print("find out FakeUSD buy rate in USD")
+    price = sybil.getBuyPriceAs("USD", FU_ADDRESS, 10**18)
+    print("price is", price, price / 10**18)
+
+    print("find out FakeUSD sell rate in USD")
+    price = sybil.getSellPriceAs("USD", FU_ADDRESS, 10**18)
+    print("price is", price, price / 10**18)
 
     assert(True)
