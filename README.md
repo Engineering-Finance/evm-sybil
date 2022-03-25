@@ -36,6 +36,15 @@ All you need to do is mark them as supported:
 
 Transaction will revert if underlying tokens are not supported.
 
+## Pegged tokens
+
+Pegged tokens are tokens which have the same value as a given currency. 
+
+Sybil supports AggregatorV3Interface price feeds, so you can request the buy price as a currency.
+
+    sybil.setCurrency("USD", USD_PRICE_FEED)
+    sybil.setPeggedToken(MY_USD_ADDRESS, "USD")
+
 ## Requesting buy price
 
 Buy price of an asset depends on the price on the amount requested. It is returned in
@@ -61,3 +70,19 @@ methods, e.g.
 
     buy_price_usd = sybil.getBuyPriceAs("USD", BUSD_ADDRESS, 100*10**18)
     sell_price_usd = sybil.getSellPriceAs("USD", BUSD_ADDRESS, 100*10**18)
+
+
+## ProxySybil
+
+ProxySybil is an ISybil-compatible contract which delegates all its calls to another ISybil contract. This allows you to change the underlying ISybil contract without having to update all your code.
+
+    proxy_sybil = accounts[0].deploy(ProxySybil)
+    proxy_sybil.change(sybil.address)
+
+
+## SybilOracleAdapter
+
+SybilOracleAdapter is a kashi-lending {IOracle} adapter for {ISybil} contracts.
+See https://github.com/sushiswap/kashi-lending/blob/master/contracts/flat/PeggedOracleFlat.sol
+
+    adapter = SybilOracleAdapter.deploy(proxy_sybil.address, {'from': acct})
