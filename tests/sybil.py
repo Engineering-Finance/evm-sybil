@@ -34,12 +34,18 @@ def erc4626():
 
 
 @pytest.fixture
-def erc20():
+def fake_usd():
     print("deploy mock ERC20 pegged to USD")
     return accounts[0].deploy(MockERC20, "Fake USD", "FU", 18, 100*10**18)
 
 
-def test_oracle(sybil, erc4626, erc20):
+@pytest.fixture
+def some_other_token():
+    print("deploy some other token")
+    return accounts[0].deploy(MockERC20, "Some other token", "SOT", 18, 100*10**18)
+
+
+def test_oracle(sybil, erc4626, fake_usd, some_other_token):
 
     # set usd price feed
     sybil.setCurrency("USD", usd_price_feed_address)
@@ -150,7 +156,7 @@ def test_oracle(sybil, erc4626, erc20):
     price = sybil.getSellPrice(ERC4626_ADDRESS, 10**18)
     print("ERC4626 sell price is", price, price / 10**18)
 
-    FU_ADDRESS = erc20.address
+    FU_ADDRESS = fake_usd.address
     print("FakeUSD Address", FU_ADDRESS)
 
     tx = sybil.setPeggedToken(FU_ADDRESS, "USD")
@@ -171,5 +177,40 @@ def test_oracle(sybil, erc4626, erc20):
     print("find out FakeUSD sell rate in USD")
     price = sybil.getSellPriceAs("USD", FU_ADDRESS, 10**18)
     print("price is", price, price / 10**18)
+
+    # create router, stake 1 some_other_token for 2 fake_usd
+    some_other_token.approve(router.address, 10*10**18)
+    fake_usd.approve(router.address, 20*10**18)
+    router.addLiquidity(
+        some_other_token.address,
+        fake_usd.address,
+        10 * 10**18,
+        20 * 10**18,
+        0,
+        0,
+        accounts[0],
+        chain.time()+1200,
+        {'from': accounts[0]}
+    )
+
+    # set up sybil for some_other_token, using fake_usd as pivot
+    sybil.setTokenPivot(some_other_token.address, SUSHISWAP_ROUTER, FU_ADDRESS)
+
+    print("find out Some Other Token buy rate")
+    price = sybil.getBuyPrice(some_other_token.address, 10**18)
+    print("Some Other Token buy price is", price, price / 10**18)
+
+    print("find out Some Other Token sell rate")
+    price = sybil.getSellPrice(some_other_token.address, 10**18)
+    print("Some Other Token sell price is", price, price / 10**18)
+
+    print("find out Some Other Token buy rate in USD")
+    price = sybil.getBuyPriceAs("USD", some_other_token.address, 10**18)
+    print("price is", price, price / 10**18)
+
+    print("find out Some Other Token sell rate in USD")
+    price = sybil.getSellPriceAs("USD", some_other_token.address, 10**18)
+    print("price is", price, price / 10**18)
+
 
     assert(True)
