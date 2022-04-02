@@ -204,8 +204,8 @@ contract Sybil is Ownable, ISybil {
     function setLPToken(address _token) onlyOwner public {
         // make sure underlying tokens are supported
         require(supportedTokens[_token] == 0, "Sybil: token is already set");
-        require(isSupportedAsset(IUniswapV2Pair(_token).token0()));
-        require(isSupportedAsset(IUniswapV2Pair(_token).token1()));
+        require(isSupportedAsset(IUniswapV2Pair(_token).token0()), "Sybil: underlying token 0 is not supported");
+        require(isSupportedAsset(IUniswapV2Pair(_token).token1()), "Sybil: underlying token 1 is not supported");
         supportedTokens[_token] = LP_TOKEN;
         emit SetLPToken(_token, true);
     }
@@ -341,6 +341,7 @@ contract Sybil is Ownable, ISybil {
         return _amount * 10**_currencyPerUnitDecimals / _currencyPerUnit;
     }
 
+
     /// @dev Get the the amount of ETH to spend to get _amount of ERC20 _tokens
     function _getBuyPricePivot(address _token, uint256 _amount) private view returns (uint256) {
         IUniswapV2Router01 _router = erc20toV2Router[_token];
@@ -421,7 +422,7 @@ contract Sybil is Ownable, ISybil {
      * @return price_ - price in UNIT to buy `_amount` of `_token`
      */
     function getBuyPrice(address _token, uint256 _amount) public view returns (uint256) {
-        require(isSupportedAsset(_token));
+        require(isSupportedAsset(_token), "Sybil: token not supported");
         if (isERC20Asset(_token)) {
             return _getBuyPriceERC20(_token, _amount);
         }
