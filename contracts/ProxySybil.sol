@@ -12,8 +12,8 @@ contract ProxySybil is Ownable, ISybil {
     constructor() Ownable() {
     }
 
-    function change(ISybil _newSybil) public onlyOwner {
-        sybilImplementation = _newSybil;
+    function change(address _newSybil) public onlyOwner {
+        sybilImplementation = ISybil(_newSybil);
     }
 
     function getBuyPrice(address _token, uint256 _amount) public view returns (uint256 price_) {

@@ -58,8 +58,8 @@ def test_oracle(sybil, erc4626, fake_usd, some_other_token):
     print("setTokenRouter router")
     tx = sybil.setTokenRouter(BUSD_ADDRESS, SUSHISWAP_ROUTER)
 
-    print('check erc20toV2Router')
-    router_address = sybil.erc20toV2Router(BUSD_ADDRESS)
+    print('check swappableToV2Router')
+    router_address = sybil.swappableToV2Router(BUSD_ADDRESS)
     assert(router_address == SUSHISWAP_ROUTER)
 
     print('get pairs')

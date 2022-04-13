@@ -16,13 +16,19 @@ import "./Ownable.sol";
  */
 contract Sybil is Ownable, ISybil {
 
-    event SetCurrency(string currency, address indexed old_feed, address indexed new_feed);
-    event SetTokenRouter(address indexed token, address indexed old_router, address indexed new_router);
-    event SetToken4626(address indexed token, bool is_4626);
-    event SetLPToken(address indexed token, bool is_lp);
+    event SetCurrency(string currency, address indexed feed);
+    event SetTokenRouter(address indexed token, address indexed router);
+    event UnsetTokenRouter(address indexed token);
+    event SetToken4626(address indexed token);
+    event UnsetToken4626(address indexed token);
+    event SetLPToken(address indexed token);
+    event UnsetLPToken(address indexed token);
     event SetPeggedToken(address indexed token, string currency);
-    event SetUnitToken(address indexed token, bool is_unit);
+    event UnsetPeggedToken(address indexed token);
+    event SetUnitToken(address indexed token);
+    event UnsetUnitToken(address indexed token);
     event SetPivot(address indexed token, address router, address pivot);
+    event UnsetPivot(address indexed token);
 
     struct LPData {
         address lpToken0;
@@ -32,18 +38,18 @@ contract Sybil is Ownable, ISybil {
         uint32 blockTimestampLast;
     }
 
-    /// @dev mapping of ERC-20 tokens to their uniswap routers
-    mapping (address => IUniswapV2Router01) public erc20toV2Router;
+    /// @dev mapping of swappable tokens to their uniswap routers
+    mapping (address => IUniswapV2Router01) public swappableToV2Router;
 
-    /// @dev mapping of ERC-20 tokens to their currency peg counterpart
-    mapping (address => string) public erc20toCurrencyPeg;
+    /// @dev mapping of peggie tokens to their currency peg counterpart
+    mapping (address => string) public pegged_tokens;
 
-    uint256 constant UNIT_TOKEN = 1;
-    uint256 constant SWAPPABLE_TOKEN = 2;
-    uint256 constant LP_TOKEN = 3;
-    uint256 constant ERC4626_TOKEN = 4;
-    uint256 constant PEGGED_TOKEN = 5;
-    uint256 constant PIVOT_TOKEN = 6;
+    uint8 UNIT_TOKEN = 1;
+    uint8 SWAPPABLE_TOKEN = 2;
+    uint8 LP_TOKEN = 3;
+    uint8 ERC4626_TOKEN = 4;
+    uint8 PEGGED_TOKEN = 5;
+    uint8 PIVOT_TOKEN = 6;
 
     /// @dev mapping of supported token 
     /// @dev 1 for unit token / tokens which don't require any conversion
@@ -52,7 +58,7 @@ contract Sybil is Ownable, ISybil {
     /// @dev 4 for EIP-4626 tokens to boolean indicating whether they are supported
     /// @dev 5 for pegged tokens which are pegged to a currency
     /// @dev 6 for *SWAP tokens that swap with other tokens, not BNB
-    mapping (address => uint256) public supportedTokens;
+    mapping (address => uint8) public supportedTokens;
 
     // mapping (address => bool) public is4626;
 
@@ -77,12 +83,12 @@ contract Sybil is Ownable, ISybil {
     /**
      * @notice - sets a currency symbol => price feed mapping
      * @param _currency - the currency symbol
-     * @param _new_feed - the address of the price feed contract
+     * @param _feed - the address of the price feed contract
      */
-    function setCurrency(string memory _currency, address _new_feed) public onlyOwner {
+    function setCurrency(string memory _currency, address _feed) public onlyOwner {
         address _old_feed = symbolToPriceFeed[_currency];
-        symbolToPriceFeed[_currency] = _new_feed;
-        emit SetCurrency(_currency, _old_feed, _new_feed);
+        symbolToPriceFeed[_currency] = _feed;
+        emit SetCurrency(_currency, _feed);
     }
 
     // @dev returns LP data for a given LP token
@@ -97,11 +103,11 @@ contract Sybil is Ownable, ISybil {
     }
 
     /**
-     * @notice - is the asset a supported ERC20 token?
+     * @notice - is the asset a supported swappable token?
      * @param _token - the token address
      * @return is_supported_ - true if the token is supported, false otherwise
      */
-    function isERC20Asset(address _token) public view returns (bool) {
+    function isSwappableAsset(address _token) public view returns (bool) {
         return supportedTokens[_token] == SWAPPABLE_TOKEN;
     }
 
@@ -151,7 +157,7 @@ contract Sybil is Ownable, ISybil {
     }
 
     /**
-     * @notice - is the asset supported at all? i.e. either ERC20, ERC4626, or LP token
+     * @notice - is the asset supported at all?
      * @param _token - the token address
      * @return is_supported_ - true if the token is supported, false otherwise
      */
@@ -160,21 +166,28 @@ contract Sybil is Ownable, ISybil {
     }
 
     /**
-     * @notice - set the router address for a given ERC20 token
+     * @notice - set the router address for a given swappable token
      * @param _token - the token address
-     * @param _new_router - the router address
+     * @param _router - the router address
      */
-    function setTokenRouter (address _token, address _new_router) onlyOwner public {
-        uint256 supportedToken_ = supportedTokens[_token];
-        require ((supportedToken_ ==0) || (supportedToken_ == SWAPPABLE_TOKEN), "Sybil: not swappable");
-        if (supportedToken_ == 0) {
-            supportedTokens[_token] = SWAPPABLE_TOKEN;
-        }
-        address _old_router = address(erc20toV2Router[_token]);
-        require(_old_router != _new_router, "Sybil: new router is the same as the old router");
-        erc20toV2Router[_token] = IUniswapV2Router01(_new_router);
-        emit SetTokenRouter(_token, _old_router, _new_router);
+    function setTokenRouter(address _token, address _router) onlyOwner public {
+        unsetToken(_token);
+        supportedTokens[_token] = SWAPPABLE_TOKEN;
+        swappableToV2Router[_token] = IUniswapV2Router01(_router);
+        emit SetTokenRouter(_token, _router);
     }
+
+    /**
+     * @notice - unsets the router address for a given swappable token
+     * @param _token - the token address
+     */
+    function unsetTokenRouter(address _token) onlyOwner public {
+        require(supportedTokens[_token] == SWAPPABLE_TOKEN, "Sybil: unsetTokenRouter: not swappable");
+        delete supportedTokens[_token];
+        delete swappableToV2Router[_token];
+        emit UnsetTokenRouter(_token);
+    }
+
 
     /**
      * @notice - marks _token as a supported ERC4626 token.
@@ -184,7 +197,7 @@ contract Sybil is Ownable, ISybil {
         require(supportedTokens[_token] == 0, "Sybil: token is already set");
         require(isSupportedAsset(IERC4626(_token).asset()), "Sybil: underlying asset is not supported");
         supportedTokens[_token] = ERC4626_TOKEN;
-        emit SetToken4626(_token, true);
+        emit SetToken4626(_token);
     }
 
     /**
@@ -193,8 +206,9 @@ contract Sybil is Ownable, ISybil {
      */
     function unsetToken4626(address _token) onlyOwner public {
         require(supportedTokens[_token] == ERC4626_TOKEN, "Sybil: token is already unset or not set as ERC4626");
+        unsetToken(_token);
         delete supportedTokens[_token];
-        emit SetToken4626(_token, false);
+        emit UnsetToken4626(_token);
     }
 
     /**
@@ -202,12 +216,12 @@ contract Sybil is Ownable, ISybil {
      * @param _token - the token address
      */
     function setLPToken(address _token) onlyOwner public {
-        // make sure underlying tokens are supported
         require(supportedTokens[_token] == 0, "Sybil: token is already set");
         require(isSupportedAsset(IUniswapV2Pair(_token).token0()), "Sybil: underlying token 0 is not supported");
         require(isSupportedAsset(IUniswapV2Pair(_token).token1()), "Sybil: underlying token 1 is not supported");
+        unsetToken(_token);
         supportedTokens[_token] = LP_TOKEN;
-        emit SetLPToken(_token, true);
+        emit SetLPToken(_token);
     }
 
     /**
@@ -217,7 +231,7 @@ contract Sybil is Ownable, ISybil {
     function unsetLPToken(address _token) onlyOwner public {
         require(supportedTokens[_token] == LP_TOKEN, "Sybil: token is already unset or not set as LP Token");
         delete supportedTokens[_token];
-        emit SetLPToken(_token, false);
+        emit UnsetLPToken(_token);
     }
 
     /**
@@ -226,8 +240,9 @@ contract Sybil is Ownable, ISybil {
      */
     function setUnitToken(address _token) onlyOwner public {
         require(supportedTokens[_token] == 0, "Sybil: token is already set");
+        unsetToken(_token);
         supportedTokens[_token] = UNIT_TOKEN;
-        emit SetUnitToken(_token, true);
+        emit SetUnitToken(_token);
     }
 
     /**
@@ -237,7 +252,7 @@ contract Sybil is Ownable, ISybil {
     function unsetUnitToken(address _token) onlyOwner public {
         require(supportedTokens[_token] == UNIT_TOKEN, "Sybil: unit token is already unset or not set as UNIT TOKEN");
         delete supportedTokens[_token];
-        emit SetUnitToken(_token, false);
+        emit UnsetUnitToken(_token);
     }
 
     /**
@@ -246,11 +261,11 @@ contract Sybil is Ownable, ISybil {
      */
     function setPeggedToken(address _token, string memory _currency) onlyOwner public {
         require(supportedTokens[_token] == 0, "Sybil: token is already set");
-
         // we must make sure that we know how to support _currency
         require(symbolToPriceFeed[_currency] != address(0), "Sybil: price feed not found");
+        unsetToken(_token);
         supportedTokens[_token] = PEGGED_TOKEN;
-        erc20toCurrencyPeg[_token] = _currency;
+        pegged_tokens[_token] = _currency;
         emit SetPeggedToken(_token, _currency);
     }
 
@@ -261,8 +276,8 @@ contract Sybil is Ownable, ISybil {
     function unsetPeggedToken(address _token) onlyOwner public {
         require(supportedTokens[_token] == PEGGED_TOKEN, "Sybil: token is already unset or not set as PEGGED TOKEN");
         delete supportedTokens[_token];
-        delete erc20toCurrencyPeg[_token];
-        emit SetPeggedToken(_token, "");
+        delete pegged_tokens[_token];
+        emit UnsetPeggedToken(_token);
     }
 
     /**
@@ -274,8 +289,9 @@ contract Sybil is Ownable, ISybil {
     function setTokenPivot(address _token, address _router, address _pivot) onlyOwner public {
         require(supportedTokens[_token] == 0, "Sybil: token is already set");
         require(isSupportedAsset(_pivot), "Sybil: pivot token is not supported");
+        unsetToken(_token);
         supportedTokens[_token] = PIVOT_TOKEN;
-        erc20toV2Router[_token] = IUniswapV2Router01(_router);
+        swappableToV2Router[_token] = IUniswapV2Router01(_router);
         pivotOf[_token] = _pivot;
         emit SetPivot(_token, _router, _pivot);
     }
@@ -287,16 +303,48 @@ contract Sybil is Ownable, ISybil {
     function unsetTokenPivot(address _token) onlyOwner public {
         require(supportedTokens[_token] == PIVOT_TOKEN, "Sybil: token is already unset or not set as PIVOT TOKEN");
         delete supportedTokens[_token];
-        delete erc20toV2Router[_token];
+        delete swappableToV2Router[_token];
         delete pivotOf[_token];
-        emit SetPivot(_token, address(0), address(0));
+        emit UnsetPivot(_token);
+    }
+
+    /**
+     * @notice - unsets a token, calling the right unset method depending on the token type
+     * @param _token - the token address
+     */
+    function unsetToken(address _token) onlyOwner public {
+        uint8 _token_type = supportedTokens[_token];
+        if(_token_type == 0) {
+            return; // already unset, nothing to do
+        }
+        else if (_token_type == UNIT_TOKEN) {
+            unsetUnitToken(_token);
+        }
+        else if (_token_type == SWAPPABLE_TOKEN) {
+            unsetTokenRouter(_token);
+        }
+        else if (_token_type == LP_TOKEN) {
+            unsetLPToken(_token);
+        }
+        else if (_token_type == ERC4626_TOKEN) {
+            unsetToken4626(_token);
+        }
+        else if (_token_type == PEGGED_TOKEN) {
+            unsetPeggedToken(_token);
+        }
+        else if (_token_type == PIVOT_TOKEN) {
+            unsetTokenPivot(_token);
+        }
+        else {
+            require(false, "Sybil: unsupported token type");
+        }
     }
 
 
-    /// @dev Get the the amount of ETH to spend to get _amount of ERC20 _tokens
-    function _getBuyPriceERC20(address _token, uint256 _amount) private view returns (uint256) {
-        IUniswapV2Router01 _router = erc20toV2Router[_token];
-        require(address(_router) != address(0), 'Sybil: ERC20 token not supported');
+    /// @dev Get the the amount of ETH to spend to get _amount of swappable _tokens
+    function _getBuyPriceSwappable(address _token, uint256 _amount) private view returns (uint256) {
+        IUniswapV2Router01 _router = swappableToV2Router[_token];
+        require(address(_router) != address(0), 'Sybil: swappable token not supported');
         
         if(_router.WETH() == _token) {
             return _amount;
@@ -336,16 +384,16 @@ contract Sybil is Ownable, ISybil {
     /// @dev Get the the amount of ETH to spend to get _amount of pegged _tokens
     function _getPricePegged(address _token, uint256 _amount) private view returns (uint256) {
         require(supportedTokens[_token] == PEGGED_TOKEN, 'Sybil: pegged token not supported');
-        string memory _currency = erc20toCurrencyPeg[_token];
+        string memory _currency = pegged_tokens[_token];
         (uint256 _currencyPerUnit, uint256 _currencyPerUnitDecimals) = _getPerUnit(_currency);
         return _amount * 10**_currencyPerUnitDecimals / _currencyPerUnit;
     }
 
 
-    /// @dev Get the the amount of ETH to spend to get _amount of ERC20 _tokens
+    /// @dev Get the the amount of ETH to spend to get _amount of _tokens
     function _getBuyPricePivot(address _token, uint256 _amount) private view returns (uint256) {
-        IUniswapV2Router01 _router = erc20toV2Router[_token];
-        require(address(_router) != address(0), 'Sybil: ERC20 token not supported');
+        IUniswapV2Router01 _router = swappableToV2Router[_token];
+        require(address(_router) != address(0), 'Sybil: swappable token not supported');
 
         address _pivot = pivotOf[_token];
         require(isSupportedAsset(_pivot), 'Sybil: pivot token not supported');
@@ -359,10 +407,10 @@ contract Sybil is Ownable, ISybil {
     }
 
 
-    /// @dev Get the the amount of ETH gotten when selling _amount of ERC20 _tokens
-    function _getSellPriceERC20(address _token, uint256 _amount) private view returns (uint256) {
-        IUniswapV2Router01 _router = erc20toV2Router[_token];
-        require(address(_router) != address(0), 'Sybil: ERC20 token not supported');
+    /// @dev Get the the amount of ETH gotten when selling _amount of swappable _tokens
+    function _getSellPriceSwappable(address _token, uint256 _amount) private view returns (uint256) {
+        IUniswapV2Router01 _router = swappableToV2Router[_token];
+        require(address(_router) != address(0), 'Sybil: swappable token not supported');
 
         if(_router.WETH() == _token) {
             return _amount;
@@ -398,10 +446,10 @@ contract Sybil is Ownable, ISybil {
             getSellPrice(_lpdata.lpToken1, _lpdata.bToken1);
     }
 
-    /// @dev Get the the amount of ETH to spend to get _amount of ERC20 _tokens
+    /// @dev Get the the amount of ETH to spend to get _amount of swappable _tokens
     function _getSellPricePivot(address _token, uint256 _amount) private view returns (uint256) {
-        IUniswapV2Router01 _router = erc20toV2Router[_token];
-        require(address(_router) != address(0), 'Sybil: ERC20 token not supported');
+        IUniswapV2Router01 _router = swappableToV2Router[_token];
+        require(address(_router) != address(0), 'Sybil: swappable token not supported');
 
         address _pivot = pivotOf[_token];
         require(isSupportedAsset(_pivot), 'Sybil: pivot token not supported');
@@ -423,8 +471,8 @@ contract Sybil is Ownable, ISybil {
      */
     function getBuyPrice(address _token, uint256 _amount) public view returns (uint256) {
         require(isSupportedAsset(_token), "Sybil: token not supported");
-        if (isERC20Asset(_token)) {
-            return _getBuyPriceERC20(_token, _amount);
+        if (isSwappableAsset(_token)) {
+            return _getBuyPriceSwappable(_token, _amount);
         }
         else if (isLPAsset(_token)) {
             return _getBuyPriceLP(_token, _amount);
@@ -459,7 +507,7 @@ contract Sybil is Ownable, ISybil {
         uint256 supportedToken_ = supportedTokens[_token]; 
         require(supportedToken_ !=0, "Token not supported");
         if (supportedToken_ ==  SWAPPABLE_TOKEN){
-            return _getSellPriceERC20(_token, _amount);
+            return _getSellPriceSwappable(_token, _amount);
         }
         else if (supportedToken_ == LP_TOKEN) {
             return _getSellPriceLP(_token, _amount);
@@ -500,7 +548,7 @@ contract Sybil is Ownable, ISybil {
         (uint256 _currencyPerUnit, uint256 _currencyPerUnitDecimals) = _getPerUnit(_currency);
 
         // if it's a pegged token and currency is the same, no need for conversion
-        if (isPeggedAsset(_token) && _isEqualStr(erc20toCurrencyPeg[_token], _currency)) {
+        if (isPeggedAsset(_token) && _isEqualStr(pegged_tokens[_token], _currency)) {
             return _amount;
         }
 
@@ -522,7 +570,7 @@ contract Sybil is Ownable, ISybil {
         (uint256 _currencyPerUnit, uint256 _currencyPerUnitDecimals) = _getPerUnit(_currency);
 
         // if it's a pegged token and currency is the same, no need for conversion
-        if (isPeggedAsset(_token) && _isEqualStr(erc20toCurrencyPeg[_token], _currency)) {
+        if (isPeggedAsset(_token) && _isEqualStr(pegged_tokens[_token], _currency)) {
             return _amount;
         }
 
