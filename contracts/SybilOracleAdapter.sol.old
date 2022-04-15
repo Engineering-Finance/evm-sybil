@@ -19,6 +19,17 @@ contract SybilOracleAdapter is Ownable, IOracle {
         sybil = _newSybil;
     }
 
+    function stringToBytes32(string memory source)  private returns (bytes32 result) {
+        // require(bytes(source).length <= 32); // causes error
+        // but string have to be max 32 chars
+        // https://ethereum.stackexchange.com/questions/9603/understanding-mload-assembly-function
+        // http://solidity.readthedocs.io/en/latest/assembly.html
+        assembly {
+        result := mload(add(source, 32))
+        }
+    }
+    
+    //
     /**
      * @notice - SybilOracleAdapter implements {IOracle} to use on {ISybil} instances.
      * @param _name - label of the token
@@ -39,7 +50,7 @@ contract SybilOracleAdapter is Ownable, IOracle {
         uint256 _multiply,
         uint256 _divide
     ) public pure returns (bytes memory) {
-        return abi.encode(_name, _symbol, _currency, _token, _amount, _multiply, _divide);
+        return abi.encode(stringToBytes32(_name), stringToBytes32(_symbol), stringToBytes32(_currency), _token, _amount, _multiply, _divide);
     }
 
     function getDataParameter2(
@@ -49,7 +60,7 @@ contract SybilOracleAdapter is Ownable, IOracle {
         address _token,
         uint256 _amount
     ) public pure returns (bytes memory) {
-        return abi.encode(_name, _symbol, _currency, _token, _amount, 1, 1);
+        return abi.encode(stringToBytes32(_name), stringToBytes32(_symbol), stringToBytes32(_currency), _token, _amount, 1, 1);
     }
 
     function getDataParameter(
@@ -58,7 +69,7 @@ contract SybilOracleAdapter is Ownable, IOracle {
         string memory _currency,
         address _token
     ) public pure returns (bytes memory) {
-        return abi.encode(_name, _symbol, _currency, _token, 1e18, 1, 1);
+        return abi.encode(stringToBytes32(_name), stringToBytes32(_symbol), stringToBytes32(_currency), _token, 1e18, 1, 1);
     }
 
     /** reverse function */
@@ -95,8 +106,8 @@ contract SybilOracleAdapter is Ownable, IOracle {
         }
         else {
             price_ = (
-                sybil.getBuyPriceAs(_currency, _token, _amount) +
-                sybil.getSellPriceAs(_currency, _token, _amount)
+                sybil.getBuyPriceAs(stringToBytes32(_currency), _token, _amount) +
+                sybil.getSellPriceAs(stringToBytes32(_currency), _token, _amount)
             ) / 2;
         }
 
