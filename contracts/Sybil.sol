@@ -293,7 +293,7 @@ contract Sybil is Ownable, ISybil {
 
     /// @dev Get the the amount of ETH gotten when selling _amount of ERC4626 _tokens
     function _getSellPriceERC4626(address _token, uint256 _amount) private view returns (uint256) {
-        require(supportedTokens[_token] == ERC4626_TOKEN, 'Sybil: EIP-4626 token not supported');
+        require(supportedTokens[_token] == ERC4626_TOKEN, 'Sybil: not an EIP-4626');
         IERC4626 _tokenContract = IERC4626(_token);
 
         address _asset = _tokenContract.asset();
@@ -306,7 +306,7 @@ contract Sybil is Ownable, ISybil {
 
     /// @dev Get the the amount of underlying token to spend to get _amount of LP _tokens
     function _getSellPriceLP(address _token, uint256 _amount) private view returns (uint256) {
-        require(supportedTokens[_token] == LP_TOKEN, 'Sybil: LP token not supported');
+        require(supportedTokens[_token] == LP_TOKEN, 'Sybil: not an LP token');
         LPData memory _lpdata = _getLPData(_token, _amount);
         return
             getSellPrice(_lpdata.lpToken0, _lpdata.bToken0) +
@@ -356,7 +356,7 @@ contract Sybil is Ownable, ISybil {
             return _getBuyPricePivot(_token, _amount);
         }
         else {
-            require(false, 'Sybil: unknown token type');
+            revert('Sybil: unknown token type');
         }
     }
 
@@ -388,7 +388,7 @@ contract Sybil is Ownable, ISybil {
             return _getSellPricePivot(_token, _amount);
         }
         else {
-            require(false, 'Sybil: unknown token type');
+            revert('Sybil: unknown token type');
         }
     }
 
