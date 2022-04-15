@@ -2,7 +2,7 @@
 # brownie test tests/sybil.py -s --network bsc-main-fork --interactive
 import pytest
 from brownie import *
-from brownie import interface
+from brownie import interface, reverts
 from brownie import exceptions as brownieExceptions
 
 ZERO_ADDRESS = '0x' + '0' * 40
@@ -48,7 +48,7 @@ def some_other_token():
 def test_oracle(sybil, erc4626, fake_usd, some_other_token):
 
     # set usd price feed
-    sybil.setCurrency("USD", usd_price_feed_address)
+    sybil.setCurrency(b"USD", usd_price_feed_address)
 
     factory = interface.IUniswapV2Factory(SUSHISWAP_FACTORY)
     router = interface.IUniswapV2Router01(SUSHISWAP_ROUTER)
@@ -93,15 +93,15 @@ def test_oracle(sybil, erc4626, fake_usd, some_other_token):
     print("BNB sell price is", price / 10**18)
 
     print("find out BUSD sell rate")
-    price = sybil.getBuyPriceAs("USD", BUSD_ADDRESS, 10**18)
+    price = sybil.getBuyPriceAs(b"USD", BUSD_ADDRESS, 10**18)
     print("Buying 1 USD for", price / 10**18)
 
     print("find out BUSD USD sell rate")
-    price = sybil.getSellPriceAs("USD", BUSD_ADDRESS, 10**18)
+    price = sybil.getSellPriceAs(b"USD", BUSD_ADDRESS, 10**18)
     print("Selling 1 USD for", price / 10**18)
 
     print("find out BUSD buy rate in USD")
-    price = sybil.getBuyPriceAs("USD", BUSD_ADDRESS, 10**18)
+    price = sybil.getBuyPriceAs(b"USD", BUSD_ADDRESS, 10**18)
     print("price is", price, price / 10**18)
 
     print("find out BUSD sell rate")
@@ -109,7 +109,7 @@ def test_oracle(sybil, erc4626, fake_usd, some_other_token):
     print("price is", price, price / 10**18)
 
     print("find out BUSD sell rate in USD")
-    price = sybil.getSellPriceAs("USD", BUSD_ADDRESS, 10**18)
+    price = sybil.getSellPriceAs(b"USD", BUSD_ADDRESS, 10**18)
     print("price is", price, price / 10**18)
 
     print("add USD/BNB pair as a LP token")
@@ -134,11 +134,11 @@ def test_oracle(sybil, erc4626, fake_usd, some_other_token):
     print("BNB sell price is", price, price / 10**18)
 
     print("buy price of 1 LP token in USD")
-    price = sybil.getBuyPriceAs("USD", pair_address, 10**18)
+    price = sybil.getBuyPriceAs(b"USD", pair_address, 10**18)
     print("Buying 1 LP token for", price, price / 10**18)
 
     print("sell price of 1 LP token in USD")
-    price = sybil.getSellPriceAs("USD", pair_address, 10**18)
+    price = sybil.getSellPriceAs(b"USD", pair_address, 10**18)
     print("Selling 1 LP token for", price, price / 10**18)
     
     ERC4626_ADDRESS = erc4626.address
@@ -159,7 +159,7 @@ def test_oracle(sybil, erc4626, fake_usd, some_other_token):
     FU_ADDRESS = fake_usd.address
     print("FakeUSD Address", FU_ADDRESS)
 
-    tx = sybil.setPeggedToken(FU_ADDRESS, "USD")
+    tx = sybil.setPeggedToken(FU_ADDRESS, b"USD")
     print("Set FakeUSD as pegged USD token in Sybil")
 
     print("find out FakeUSD buy rate")
@@ -171,11 +171,15 @@ def test_oracle(sybil, erc4626, fake_usd, some_other_token):
     print("FakeUSD sell price is", price, price / 10**18)
 
     print("find out FakeUSD buy rate in USD")
-    price = sybil.getBuyPriceAs("USD", FU_ADDRESS, 10**18)
+    price = sybil.getBuyPriceAs(b"USD", FU_ADDRESS, 10**18)
     print("price is", price, price / 10**18)
 
+    print("search for non existing price should fail")
+    with reverts():
+        price = sybil.getBuyPriceAs(b"EUR", FU_ADDRESS, 10**18)
+    
     print("find out FakeUSD sell rate in USD")
-    price = sybil.getSellPriceAs("USD", FU_ADDRESS, 10**18)
+    price = sybil.getSellPriceAs(b"USD", FU_ADDRESS, 10**18)
     print("price is", price, price / 10**18)
 
     # create router, stake 1 some_other_token for 2 fake_usd
@@ -205,11 +209,11 @@ def test_oracle(sybil, erc4626, fake_usd, some_other_token):
     print("Some Other Token sell price is", price, price / 10**18)
 
     print("find out Some Other Token buy rate in USD")
-    price = sybil.getBuyPriceAs("USD", some_other_token.address, 10**18)
+    price = sybil.getBuyPriceAs(b"USD", some_other_token.address, 10**18)
     print("price is", price, price / 10**18)
 
     print("find out Some Other Token sell rate in USD")
-    price = sybil.getSellPriceAs("USD", some_other_token.address, 10**18)
+    price = sybil.getSellPriceAs(b"USD", some_other_token.address, 10**18)
     print("price is", price, price / 10**18)
 
 

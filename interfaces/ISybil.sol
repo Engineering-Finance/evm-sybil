@@ -26,7 +26,7 @@ interface ISybil {
      * @param _amount - the amount of tokens to buy
      * @return price_ - price in _currency to buy `_amount` of `_token`
      */
-    function getBuyPriceAs(string memory _currency, address _token, uint256 _amount) external view returns (uint256 price_);
+    function getBuyPriceAs(bytes32 _currency, address _token, uint256 _amount) external view returns (uint256 price_);
 
     /**
      * @notice - Same as getSellPrice(), but returns the price in _currency instead of UNIT.
@@ -35,5 +35,5 @@ interface ISybil {
      * @param _amount - the amount of tokens to sell
      * @return price_ - price in _currency to buy `_amount` of `_token`
      */
-    function getSellPriceAs(string memory _currency, address _token, uint256 _amount) external view returns (uint256 price_);
+    function getSellPriceAs(bytes32  _currency, address _token, uint256 _amount) external view returns (uint256 price_);
 }
