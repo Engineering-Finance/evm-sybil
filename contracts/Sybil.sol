@@ -86,7 +86,6 @@ contract Sybil is Ownable, ISybil {
      * @param _feed - the address of the price feed contract
      */
     function setCurrency(string memory _currency, address _feed) public onlyOwner {
-        address _old_feed = symbolToPriceFeed[_currency];
         symbolToPriceFeed[_currency] = _feed;
         emit SetCurrency(_currency, _feed);
     }
