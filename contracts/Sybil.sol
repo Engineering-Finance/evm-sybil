@@ -26,8 +26,6 @@ contract Sybil is Ownable, ISybil {
         _;
     }
 
-
-
     event SetCurrency(bytes32 currency, address indexed feed);
     event SetTokenRouter(address indexed token, address indexed router);
     event UnsetToken(address indexed token, uint256 tokenType);
@@ -75,6 +73,9 @@ contract Sybil is Ownable, ISybil {
     /// @dev there is no corresponding ETH/BNB pool
     mapping (address => address) public pivotOf;
 
+    /// @dev this should return the precision of the current chain
+    uint256 public precision = 10**18;
+
     /// @notice `owner` defaults to msg.sender on construction.
     constructor() Ownable() {
     }
@@ -99,7 +100,6 @@ contract Sybil is Ownable, ISybil {
         lpdata.bToken1 = _amount * _reserve1 / t;
         lpdata.blockTimestampLast = _blockTimestampLast;
     }
-
 
     /**
      * @notice - set the router address for a given swappable token
@@ -401,6 +401,7 @@ contract Sybil is Ownable, ISybil {
         (,int price,,,) = _pricefeed.latestRoundData();
         return (uint256(price), _pricefeed.decimals());
     }
+
 
     /**
      * @notice - Same as getBuyPrice(), but returns the price in _currency instead of UNIT.

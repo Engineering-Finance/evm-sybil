@@ -4,6 +4,11 @@ pragma solidity >=0.8.10 <0.9.0;
 interface ISybil {    
 
     /**
+     * @notice - returns the sybil precision, which should be the same as the current chain.
+     */
+    function precision() external view returns (uint256);
+
+    /**
      * @notice - Return price in UNIT to buy `_amount` of `_token`
      * @param _token - the token address
      * @param _amount - the amount of tokens to buy

@@ -16,6 +16,10 @@ contract ProxySybil is Ownable, ISybil {
         sybilImplementation = ISybil(_newSybil);
     }
 
+    function precision() public view returns (uint256) {
+        return sybilImplementation.precision();
+    }
+
     function getBuyPrice(address _token, uint256 _amount) public view returns (uint256 price_) {
         return sybilImplementation.getBuyPrice(_token, _amount);
     }
