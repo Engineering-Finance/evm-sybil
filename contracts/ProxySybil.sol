@@ -35,4 +35,8 @@ contract ProxySybil is Ownable, ISybil {
     function getSellPriceAs(bytes32 _currency, address _token, uint256 _amount) external view returns (uint256 price_) {
         return sybilImplementation.getSellPriceAs(_currency, _token, _amount);
     }
+
+    function getCurrencyID(string calldata _currency) external view returns (bytes32) {
+        return sybilImplementation.getCurrencyID(_currency);
+    }
 }

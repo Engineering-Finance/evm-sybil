@@ -81,6 +81,15 @@ contract Sybil is Ownable, ISybil {
     }
 
     /**
+     * @notice - return the currency ID of a current string.
+     * @param _currency - the currency symbol string
+     * @return - the currency ID as a bytes32
+     */
+    function getCurrencyID(string calldata _currency) external pure returns (bytes32) {
+        return bytes32(keccak256(bytes(_currency)));
+    }
+
+    /**
      * @notice - sets a currency symbol => price feed mapping
      * @param _currency - the currency symbol
      * @param _feed - the address of the price feed contract
@@ -173,7 +182,6 @@ contract Sybil is Ownable, ISybil {
         emit SetPivot(_token, _router, _pivot);
     }
 
-
     /**
      * @notice - unsets a token, calling the right unset method depending on the token type
      * @param _token - the token address
@@ -213,7 +221,6 @@ contract Sybil is Ownable, ISybil {
 
     }
 
-
     /// @dev Get the the amount of ETH to spend to get _amount of swappable _tokens
     function _getBuyPriceSwappable(address _token, uint256 _amount) private view returns (uint256) {
         IUniswapV2Router01 _router = swappableToV2Router[_token];
@@ -230,7 +237,6 @@ contract Sybil is Ownable, ISybil {
         }
     }
 
-
     /// @dev Get the the amount of ETH to spend to get _amount of ERC4626 _tokens
     function _getBuyPriceERC4626(address _token, uint256 _amount) private view tokenIs(_token, ERC4626_TOKEN) returns (uint256) {
         IERC4626 _tokenContract = IERC4626(_token);
@@ -242,7 +248,6 @@ contract Sybil is Ownable, ISybil {
         return getBuyPrice(_asset, _tokenContract.previewRedeem(_amount));
     }
 
-
     /// @dev Get the the amount of underlying token to spend to get _amount of LP _tokens
     function _getBuyPriceLP(address _token, uint256 _amount) private view tokenIs(_token, LP_TOKEN) returns (uint256) {
         LPData memory _lpdata = _getLPData(_token, _amount);
@@ -251,14 +256,12 @@ contract Sybil is Ownable, ISybil {
             getBuyPrice(_lpdata.lpToken1, _lpdata.bToken1);
     }
 
-
     /// @dev Get the the amount of ETH to spend to get _amount of pegged _tokens
     function _getPricePegged(address _token, uint256 _amount) private view tokenIs(_token, PEGGED_TOKEN) returns (uint256) {
         bytes32  _currency = pegged_tokens[_token];
         (uint256 _currencyPerUnit, uint256 _currencyPerUnitDecimals) = _getPerUnit(_currency);
         return _amount * 10**_currencyPerUnitDecimals / _currencyPerUnit;
     }
-
 
     /// @dev Get the the amount of ETH to spend to get _amount of _tokens
     function _getBuyPricePivot(address _token, uint256 _amount) private view returns (uint256) {
@@ -276,7 +279,6 @@ contract Sybil is Ownable, ISybil {
         return getBuyPrice(_pivot, _pivot_amount);
     }
 
-
     /// @dev Get the the amount of ETH gotten when selling _amount of swappable _tokens
     function _getSellPriceSwappable(address _token, uint256 _amount) private view returns (uint256) {
         IUniswapV2Router01 _router = swappableToV2Router[_token];
@@ -293,7 +295,6 @@ contract Sybil is Ownable, ISybil {
         }
     }
 
-
     /// @dev Get the the amount of ETH gotten when selling _amount of ERC4626 _tokens
     function _getSellPriceERC4626(address _token, uint256 _amount) private view tokenIs(_token, ERC4626_TOKEN) returns (uint256) {
         IERC4626 _tokenContract = IERC4626(_token);
@@ -304,7 +305,6 @@ contract Sybil is Ownable, ISybil {
         // return rate of underlying token
         return getSellPrice(_asset, _tokenContract.previewRedeem(_amount));
     }
-
 
     /// @dev Get the the amount of underlying token to spend to get _amount of LP _tokens
     function _getSellPriceLP(address _token, uint256 _amount) private view tokenIs(_token, LP_TOKEN) returns (uint256) {
@@ -328,7 +328,6 @@ contract Sybil is Ownable, ISybil {
         uint256 _pivot_amount = _router.getAmountsOut(_amount, _path)[1];
         return getSellPrice(_pivot, _pivot_amount);
     }
-
 
     /**
      * @notice - Return price in UNIT to buy `_amount` of `_token`
@@ -402,9 +401,8 @@ contract Sybil is Ownable, ISybil {
         return (uint256(price), _pricefeed.decimals());
     }
 
-
     /**
-     * @notice - Same as getBuyPrice(), but returns the price in _currency instead of UNIT.
+     * @notice - Same as getBuyPrice(), but returns the price given a currency, using precision()
      * @param _currency - the currency use (e.g. 'ETH')
      * @param _token - the token address
      * @param _amount - the amount of tokens to buy
@@ -419,13 +417,12 @@ contract Sybil is Ownable, ISybil {
         return getBuyPrice(_token, _amount) * _currencyPerUnit / 10**_currencyPerUnitDecimals;
     }
 
-
     /**
-     * @notice - Same as getSellPrice(), but returns the price in _currency instead of UNIT.
+     * @notice - Same as getSellPrice(), but returns the price given a currency, using precision()
      * @param _currency - the currency use (e.g. 'ETH')
      * @param _token - the token address
      * @param _amount - the amount of tokens to sell
-     * @return price_ - price in _currency we got for selling `_amount` of `_token`
+     * @return price_ - price we got for selling `_amount` of `_token`
      */
     function getSellPriceAs(bytes32  _currency, address _token, uint256 _amount) public view returns (uint256) {
         (uint256 _currencyPerUnit, uint256 _currencyPerUnitDecimals) = _getPerUnit(_currency);
