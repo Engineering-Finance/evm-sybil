@@ -22,11 +22,7 @@ def main():
     proxy_sybil = ProxySybil.deploy({'from': acct})
     proxy_sybil.change(sybil_impl.address, {'from': acct})
 
-    print("deploy adapter")
-    adapter = SybilOracleAdapter.deploy(proxy_sybil.address, {'from': acct})
-
     print('------------------------------------------------------')
-    print("SYBIL=", sybil_impl.address)
+    print("SYBIL=", proxy_sybil.address)
     print("SYBIL_IMPL=", sybil_impl.address)
-    print("ORACLE=", adapter.address)
     print('------------------------------------------------------')
